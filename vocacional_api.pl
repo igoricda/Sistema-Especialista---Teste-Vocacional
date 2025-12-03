@@ -331,35 +331,83 @@ get_course_alternatives(Area, ID, Alts) :-
 
 % --- API FINAL: Retorna lista de listas: [[Score, Curso], ...] ---
 api_calc_final(SelectedTexts, Ranking) :-
-    reset_contadores,
+    % 1. Inicializa contadores com pontos da etapa 1
+    inicializar_contadores_com_pontos_area, 
+    % 2. Soma pontos da etapa 2
     process_course_answers(SelectedTexts),
-    get_course_ranking(Ranking).
-
-reset_contadores :-
-    retractall(contador(_,_)),
-    findall(C, (area(A), curso(A, C)), Cursos),
-    forall(member(C, Cursos), assertz(contador(C,0))).
-
-process_course_answers([]).
-process_course_answers([Text|Rest]) :-
-    (opc_curso(_, _, Text, Curso) ->
-        inc_contador(Curso)
-    ; true),
-    process_course_answers(Rest).
-
+    % 3. Calcula MÉDIA e gera ranking
+    get_course_ranking_media(Ranking).
 
 % Define unificações (Aliases)
 resolver_nome_curso(psicologia_humanas, psicologia) :- !.
 resolver_nome_curso(X, X).
 
-inc_contador(CursoRaw) :-
-    resolver_nome_curso(CursoRaw, CursoReal),
-    (contador(CursoReal, V) ->
-        V1 is V + 1,
-        retract(contador(CursoReal, V)),
-        assertz(contador(CursoReal, V1))
-    ; assertz(contador(CursoReal, 1))).
+% Inicializa
+inicializar_contadores_com_pontos_area :-
+    retractall(contador(_,_)),
+    forall(curso(Area, CursoRaw),
+           (
+               resolver_nome_curso(CursoRaw, CursoReal),
+               (pontos(Area, P) -> PontosArea = P ; PontosArea = 0),
+               adicionar_ao_contador(CursoReal, PontosArea)
+           )).
 
-get_course_ranking(Ranking) :-
-    findall([V, C], (contador(C, V), V > 0), Pairs),
+% Auxiliar para somar pontos
+adicionar_ao_contador(Curso, Pontos) :-
+    (contador(Curso, ValorAtual) ->
+        NovoValor is ValorAtual + Pontos,
+        retract(contador(Curso, ValorAtual)),
+        assertz(contador(Curso, NovoValor))
+    ; assertz(contador(Curso, Pontos))).
+
+% Processa respostas etapa 2
+process_course_answers([]).
+process_course_answers([Text|Rest]) :-
+    (opc_curso(_, _, Text, CursoRaw) ->
+        resolver_nome_curso(CursoRaw, CursoReal),
+        adicionar_ao_contador(CursoReal, 1)
+    ; true),
+    process_course_answers(Rest).
+
+% --- CÁLCULO DA MÉDIA ---
+
+% Conta quantas perguntas existem na Etapa 1 + Etapa 2 para uma dada Area
+contar_perguntas_da_area(Area, Total) :-
+    % Etapa 1: conta todas as perguntas de área (pois todas as áreas competem nelas)
+    findall(ID1, pergunta_area(ID1, _), L1),
+    length(L1, Qtd1),
+    % Etapa 2: conta apenas perguntas desta área específica
+    findall(ID2, pergunta_curso(Area, ID2, _), L2),
+    length(L2, Qtd2),
+    Total is Qtd1 + Qtd2.
+
+% Soma o total de perguntas de uma lista de áreas
+somar_perguntas_areas([], 0).
+somar_perguntas_areas([Area|Resto], Total) :-
+    contar_perguntas_da_area(Area, Qtd),
+    somar_perguntas_areas(Resto, SubTotal),
+    Total is Qtd + SubTotal.
+
+% Calcula a média individual de um curso
+calcular_media_curso(CursoReal, ScoreTotal, Media) :-
+    % 1. Descobre quais áreas alimentam este curso (Ex: Psicologia -> [saude, humanas])
+    findall(Area, 
+            (curso(Area, RawName), resolver_nome_curso(RawName, CursoReal)), 
+            Areas),
+    sort(Areas, UniqueAreas), % Remove duplicatas se houver
+    
+    % 2. Soma o total de perguntas possíveis nessas áreas
+    somar_perguntas_areas(UniqueAreas, Denominador),
+    
+    % 3. Faz a divisão (evitando divisão por zero)
+    (Denominador > 0 -> 
+        MediaRaw is ScoreTotal / Denominador,
+        % Multiplica por 10 para ficar uma nota tipo "7.5" em vez de "0.75"
+        Media is MediaRaw * 10
+    ; Media = 0).
+
+get_course_ranking_media(Ranking) :-
+    findall([Media, C], 
+            (contador(C, V), V > 0, calcular_media_curso(C, V, Media)), 
+            Pairs),
     sort(1, @>=, Pairs, Ranking).
