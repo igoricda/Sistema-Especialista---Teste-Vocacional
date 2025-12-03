@@ -23,8 +23,6 @@ def get_questions1():
         questions = []
         
         for item in raw_data:
-            # item agora é uma lista: [ID, Texto, [Alts]]
-            # Acessamos por índice, não por .args
             q_id = item[0]
             q_text = str(item[1])
             q_alts = [str(a) for a in item[2]]
@@ -53,7 +51,6 @@ def submit1():
     
     top_areas = []
     if result:
-        # TopAreas já retorna uma lista de atomos, o PySWIP lida bem com isso
         top_areas = [str(a) for a in result[0]['TopAreas']]
         
     return jsonify({"top_areas": top_areas})
@@ -72,7 +69,6 @@ def get_questions2():
     if result:
         raw_data = result[0]['Questions']
         for item in raw_data:
-            # item agora é uma lista: [Area, ID, Texto, [Alts]]
             q_area = str(item[0])
             q_id = item[1]
             q_text = str(item[2])
@@ -102,7 +98,6 @@ def submit_final():
     if result:
         raw_list = result[0]['Ranking']
         for item in raw_list:
-            # item agora é uma lista: [Score, Curso]
             score = item[0]
             curso = str(item[1])
             ranking.append({"course": curso, "score": score})

@@ -216,7 +216,6 @@
             document.getElementById('stage1').classList.add('hidden');
             document.getElementById('stage2').classList.remove('hidden');
             
-            // ATUALIZADO: Formata os nomes das áreas no topo
             const formattedAreas = topAreas.map(area => formatName(area));
             document.getElementById('top-areas-display').innerText = formattedAreas.join(', ');
 
@@ -238,7 +237,6 @@
                 div.className = 'question';
                 div.id = `div_q2_${index}`;
                 
-                // ATUALIZADO: Usa formatName(q.area) no título da pergunta
                 let html = `<h3><small style="color:#666">[${formatName(q.area)}]</small> ${q.text}</h3>`;
                 
                 q.options.forEach(opt => {
@@ -275,7 +273,6 @@
             topAreas.forEach((area, index) => {
                 const badge = document.createElement('span');
                 badge.className = 'macro-area-badge';
-                // ATUALIZADO: Usa formatName(area)
                 badge.innerText = `${index + 1}º ${formatName(area)}`;
                 macroContainer.appendChild(badge);
             });
