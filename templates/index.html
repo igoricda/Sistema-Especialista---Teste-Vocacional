@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Vocacional Unioeste</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f0f2f5; color: #333; }
+        .card { background: white; padding: 25px; margin-bottom: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { color: #0056b3; text-align: center; }
+        h2 { border-bottom: 2px solid #0056b3; padding-bottom: 10px; margin-bottom: 20px; font-size: 1.5em; }
+        h3 { font-size: 1.1em; margin-bottom: 10px; color: #444; }
+        
+        button { 
+            background: #0056b3; color: white; border: none; padding: 12px 24px; 
+            cursor: pointer; border-radius: 5px; font-size: 16px; width: 100%; 
+            transition: background 0.3s; font-weight: bold;
+        }
+        button:hover { background: #004494; }
+        
+        .hidden { display: none; }
+        
+        .question { 
+            background: #fafafa; padding: 15px; margin-bottom: 20px; 
+            border-radius: 8px; border: 1px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .error-highlight { border: 2px solid #dc3545; background-color: #fff8f8; }
+        .error-msg { color: #dc3545; font-size: 0.9em; margin-top: 5px; font-weight: bold; display: none; }
+        .error-highlight .error-msg { display: block; }
+        
+        .option-label { 
+            display: flex; align-items: center; margin: 8px 0; 
+            cursor: pointer; padding: 8px; border-radius: 4px; 
+            transition: background 0.2s; 
+        }
+        .option-label:hover { background-color: #e6f0ff; }
+        .option-label input { margin-right: 10px; transform: scale(1.2); }
+        
+        /* Estilos do Resultado */
+        .macro-area-badge {
+            display: inline-block; background: #e3f2fd; color: #0d47a1;
+            padding: 5px 10px; border-radius: 15px; font-size: 0.9em;
+            margin-right: 5px; border: 1px solid #bbdefb;
+        }
+
+        .result-item { 
+            padding: 15px; background: #e9ecef; margin: 10px 0; 
+            border-radius: 5px; border-left: 5px solid #0056b3; 
+            font-size: 1.1em; display: flex; justify-content: space-between;
+        }
+        
+        .rank-number {
+            font-weight: bold; font-size: 1.2em; color: #0056b3; margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="intro" class="card">
+        <h1>Teste Vocacional Unioeste</h1>
+        <p style="text-align: center;">Descubra qual curso combina mais com você através do nosso sistema especialista.</p>
+        <p style="text-align: center; font-size: 0.9em; color: #666;">Você pode selecionar múltiplas opções, mas deve responder todas as perguntas.</p>
+        <button onclick="startTest()">Iniciar Teste</button>
+    </div>
+
+    <div id="stage1" class="card hidden">
+        <h2>Etapa 1: Macro-Áreas</h2>
+        <div id="questions-container-1"></div>
+        <button onclick="submitStage1()">Enviar Respostas</button>
+    </div>
+
+    <div id="stage2" class="card hidden">
+        <h2>Etapa 2: Cursos Específicos</h2>
+        <p>Baseado nas suas respostas, vamos aprofundar nas áreas: <b id="top-areas-display" style="color: #0056b3;"></b></p>
+        <div id="questions-container-2"></div>
+        <button onclick="submitStage2()">Ver Resultado Final</button>
+    </div>
+
+    <div id="result" class="card hidden">
+        <h2>Resultado Final</h2>
+        
+        <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
+            <h3>Suas Macro-Áreas Predominantes:</h3>
+            <div id="macro-areas-result"></div>
+        </div>
+
+        <h3>Ranking de Cursos Recomendados (Top 5):</h3>
+        <div id="ranking-container"></div>
+        <br>
+        <button onclick="location.reload()">Refazer Teste</button>
+    </div>
+
+    <script>
+        let topAreas = [];
+        let stage1QuestionIds = []; 
+        let stage2QuestionIndices = [];
+
+        // --- MAPA DE NOMES PARA EXIBIÇÃO ---
+    const displayNames = {
+        // Macro-Áreas
+        "negocios": "Negócios",
+        "tecnologia_exatas": "Tecnologia e Exatas",
+        "saude_bemestar": "Saúde e Bem-Estar",
+        "biologicas_agrarias": "Biológicas e Agrárias",
+        "humanas_sociais": "Humanas e Sociais",
+
+        // Cursos
+        "administracao": "Administração",
+        "contabeis": "Ciências Contábeis",
+        "economia": "Economia",
+        "secretariado_executivo": "Secretariado Executivo Trilíngue",
+        "turismo": "Turismo",
+        "hotelaria": "Hotelaria",
+        
+        "computacao": "Ciência da Computação",
+        "engenharia_eletrica": "Engenharia Elétrica",
+        "engenharia_mecanica": "Engenharia Mecânica",
+        "engenharia_quimica": "Engenharia Química",
+        "engenharia_civil": "Engenharia Civil",
+        "engenharia_agricola": "Engenharia Agrícola",
+        "matematica": "Matemática",
+        
+        "medicina": "Medicina",
+        "enfermagem": "Enfermagem",
+        "fisioterapia": "Fisioterapia",
+        "nutricao": "Nutrição",
+        "farmacia": "Farmácia",
+        "odontologia": "Odontologia",
+        "psicologia": "Psicologia",
+        "educacao_fisica": "Educação Física",
+        
+        "biologicas": "Ciências Biológicas",
+        "agronomia": "Agronomia",
+        "zootecnia": "Zootecnia",
+        
+        "filosofia": "Filosofia",
+        "historia": "História",
+        "geografia": "Geografia",
+        "ciencias_sociais": "Ciências Sociais",
+        "pedagogia": "Pedagogia",
+        "educacao_especial": "Educação Especial",
+        "servico_social": "Serviço Social",
+        "direito": "Direito",
+        "letras": "Letras"
+    };
+
+    function formatName(key) {
+        return displayNames[key] || key; // Retorna o nome formatado ou a chave original se não achar
+    }
+
+        async function startTest() {
+            document.getElementById('intro').classList.add('hidden');
+            document.getElementById('stage1').classList.remove('hidden');
+            
+            try {
+                const response = await fetch('/api/questions1');
+                const questions = await response.json();
+                
+                const container = document.getElementById('questions-container-1');
+                container.innerHTML = '';
+                stage1QuestionIds = []; 
+                
+                questions.forEach(q => {
+                    stage1QuestionIds.push(q.id);
+                    const div = document.createElement('div');
+                    div.className = 'question';
+                    div.id = `div_q1_${q.id}`;
+                    
+                    let html = `<h3>${q.text}</h3>`;
+                    q.options.forEach(opt => {
+                        html += `<label class="option-label"><input type="checkbox" name="q1_${q.id}" value="${opt}"> ${opt}</label>`;
+                    });
+                    html += `<div class="error-msg">Por favor, selecione ao menos uma opção.</div>`;
+                    div.innerHTML = html;
+                    container.appendChild(div);
+                });
+            } catch (e) { alert("Erro ao conectar com o servidor."); }
+        }
+
+        function validateAndGetAnswers(idList, prefix, divPrefix) {
+            let allValid = true;
+            let collectedAnswers = [];
+            idList.forEach(id => {
+                const inputsChecked = document.querySelectorAll(`input[name="${prefix}_${id}"]:checked`);
+                const divElement = document.getElementById(`${divPrefix}_${id}`);
+                if (inputsChecked.length === 0) {
+                    allValid = false;
+                    if(divElement) divElement.classList.add('error-highlight');
+                } else {
+                    if(divElement) divElement.classList.remove('error-highlight');
+                    inputsChecked.forEach(i => collectedAnswers.push(i.value));
+                }
+            });
+            return { valid: allValid, answers: collectedAnswers };
+        }
+
+        async function submitStage1() {
+            const result = validateAndGetAnswers(stage1QuestionIds, 'q1', 'div_q1');
+            if (!result.valid) {
+                alert("Existem perguntas sem resposta.");
+                return;
+            }
+            const response = await fetch('/api/submit1', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({answers: result.answers})
+            });
+            const data = await response.json();
+            topAreas = data.top_areas;
+            startStage2();
+        }
+
+        async function startStage2() {
+            document.getElementById('stage1').classList.add('hidden');
+            document.getElementById('stage2').classList.remove('hidden');
+            
+            // ATUALIZADO: Formata os nomes das áreas no topo
+            const formattedAreas = topAreas.map(area => formatName(area));
+            document.getElementById('top-areas-display').innerText = formattedAreas.join(', ');
+
+            const response = await fetch('/api/questions2', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({areas: topAreas})
+            });
+            const questions = await response.json();
+            const container = document.getElementById('questions-container-2');
+            container.innerHTML = '';
+            stage2QuestionIndices = [];
+
+            if(questions.length === 0) container.innerHTML = "<p>Nenhuma pergunta específica encontrada.</p>";
+
+            questions.forEach((q, index) => {
+                stage2QuestionIndices.push(index);
+                const div = document.createElement('div');
+                div.className = 'question';
+                div.id = `div_q2_${index}`;
+                
+                // ATUALIZADO: Usa formatName(q.area) no título da pergunta
+                let html = `<h3><small style="color:#666">[${formatName(q.area)}]</small> ${q.text}</h3>`;
+                
+                q.options.forEach(opt => {
+                    html += `<label class="option-label"><input type="checkbox" name="q2_${index}" value="${opt}"> ${opt}</label>`;
+                });
+                html += `<div class="error-msg">Por favor, selecione ao menos uma opção.</div>`;
+                div.innerHTML = html;
+                container.appendChild(div);
+            });
+        }
+
+        async function submitStage2() {
+            const result = validateAndGetAnswers(stage2QuestionIndices, 'q2', 'div_q2');
+            if (!result.valid && stage2QuestionIndices.length > 0) {
+                alert("Existem perguntas sem resposta na etapa 2.");
+                return;
+            }
+            const response = await fetch('/api/submit_final', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({answers: result.answers})
+            });
+            const ranking = await response.json();
+            showResults(ranking);
+        }
+
+       function showResults(ranking) {
+            document.getElementById('stage2').classList.add('hidden');
+            document.getElementById('result').classList.remove('hidden');
+
+            // --- 1. Exibir Ranking Macro-Áreas ---
+            const macroContainer = document.getElementById('macro-areas-result');
+            macroContainer.innerHTML = '';
+            topAreas.forEach((area, index) => {
+                const badge = document.createElement('span');
+                badge.className = 'macro-area-badge';
+                // ATUALIZADO: Usa formatName(area)
+                badge.innerText = `${index + 1}º ${formatName(area)}`;
+                macroContainer.appendChild(badge);
+            });
+
+            // --- 2. Exibir Ranking Cursos (HARD LIMIT: 5 Cursos) ---
+            const container = document.getElementById('ranking-container');
+            container.innerHTML = '';
+
+            if (ranking.length === 0) {
+                container.innerHTML = '<p>Inconclusivo.</p>';
+                return;
+            }
+
+            let currentRank = 0;
+            let previousScore = -1;
+            const maxCoursesToShow = 5;
+            const limit = Math.min(ranking.length, maxCoursesToShow);
+
+            for (let i = 0; i < limit; i++) {
+                const item = ranking[i];
+                const score = item.score;
+
+                if (score !== previousScore) {
+                    currentRank++;
+                }
+
+
+                const div = document.createElement('div');
+                div.className = 'result-item';
+                div.innerHTML = `
+                    <div>
+                        <span class="rank-number">${currentRank}º</span>
+                        <strong>${formatName(item.course)}</strong>
+                    </div>
+                `;
+                container.appendChild(div);
+
+                previousScore = score;
+            }
+        }
+    </script>
+</body>
+</html>
