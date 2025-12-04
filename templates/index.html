@@ -1,10 +1,13 @@
+<!--Autores: Guilherme Altmeyer Soares, Igor Correa Domingues, Kauan Carlos Campos e Maria Eduarda Quevedo-->
+
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teste Vocacional Unioeste</title>
-    <style>
+    <style> /* Style usado na interface */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f0f2f5; color: #333; }
         .card { background: white; padding: 25px; margin-bottom: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         h1 { color: #0056b3; text-align: center; }
@@ -37,8 +40,7 @@
         }
         .option-label:hover { background-color: #e6f0ff; }
         .option-label input { margin-right: 10px; transform: scale(1.2); }
-        
-        /* Estilos do Resultado */
+
         .macro-area-badge {
             display: inline-block; background: #e3f2fd; color: #0d47a1;
             padding: 5px 10px; border-radius: 15px; font-size: 0.9em;
@@ -97,7 +99,7 @@
         let stage1QuestionIds = []; 
         let stage2QuestionIndices = [];
 
-        // --- MAPA DE NOMES PARA EXIBIÇÃO ---
+        // MAPA DE NOMES PARA EXIBIÇÃO
     const displayNames = {
         // Macro-Áreas
         "negocios": "Negócios",
@@ -150,7 +152,7 @@
         return displayNames[key] || key; // Retorna o nome formatado ou a chave original se não achar
     }
 
-        async function startTest() {
+        async function startTest() { // Recebe as questoes das macro-areas e coloca-as na tela para serem respondidas
             document.getElementById('intro').classList.add('hidden');
             document.getElementById('stage1').classList.remove('hidden');
             
@@ -179,7 +181,7 @@
             } catch (e) { alert("Erro ao conectar com o servidor."); }
         }
 
-        function validateAndGetAnswers(idList, prefix, divPrefix) {
+        function validateAndGetAnswers(idList, prefix, divPrefix) { //Valida se todas as questoes tem ao menos uma resposta e coleta as respostas
             let allValid = true;
             let collectedAnswers = [];
             idList.forEach(id => {
@@ -196,7 +198,7 @@
             return { valid: allValid, answers: collectedAnswers };
         }
 
-        async function submitStage1() {
+        async function submitStage1() { //Envia as respostas para a api, recebe a resposta e comeca o estagio 2
             const result = validateAndGetAnswers(stage1QuestionIds, 'q1', 'div_q1');
             if (!result.valid) {
                 alert("Existem perguntas sem resposta.");
@@ -212,7 +214,7 @@
             startStage2();
         }
 
-        async function startStage2() {
+        async function startStage2() { // Pega as questoes das micros-areas e coloca na tela
             document.getElementById('stage1').classList.add('hidden');
             document.getElementById('stage2').classList.remove('hidden');
             
@@ -248,7 +250,7 @@
             });
         }
 
-        async function submitStage2() {
+        async function submitStage2() { //Valida e envia as respostas para API e recebe o ranking
             const result = validateAndGetAnswers(stage2QuestionIndices, 'q2', 'div_q2');
             if (!result.valid && stage2QuestionIndices.length > 0) {
                 alert("Existem perguntas sem resposta na etapa 2.");
@@ -263,11 +265,11 @@
             showResults(ranking);
         }
 
-       function showResults(ranking) {
+       function showResults(ranking) { //Mostra os ranking de micro e macro areas
             document.getElementById('stage2').classList.add('hidden');
             document.getElementById('result').classList.remove('hidden');
 
-            // --- 1. Exibir Ranking Macro-Áreas ---
+            // Exibir Ranking Macro-Áreas
             const macroContainer = document.getElementById('macro-areas-result');
             macroContainer.innerHTML = '';
             topAreas.forEach((area, index) => {
@@ -277,7 +279,7 @@
                 macroContainer.appendChild(badge);
             });
 
-            // --- 2. Exibir Ranking Cursos (HARD LIMIT: 5 Cursos) ---
+            // Exibir Ranking Cursos
             const container = document.getElementById('ranking-container');
             container.innerHTML = '';
 

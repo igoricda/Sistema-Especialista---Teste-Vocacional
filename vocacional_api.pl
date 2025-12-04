@@ -1,4 +1,5 @@
 % vocacional_api.pl
+% Autores: Guilherme Altmeyer Soares, Igor Correa Domingues de Almeida, Kauan Carlos Campos e Maria Eduarda Quevedo
 :- module(vocacional_api, [
     api_get_questions1/1,
     api_calc_stage1/2,

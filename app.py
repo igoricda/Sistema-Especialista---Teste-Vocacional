@@ -1,3 +1,6 @@
+# Autores:
+# Guilherme Altmeyer Soares, Igor Correa Domingues de Almeida, Kauan Carlos Campos e Maria Eduarda Quevedo
+
 from flask import Flask, render_template, request, jsonify
 from pyswip import Prolog
 from flask_cors import CORS
@@ -8,10 +11,12 @@ CORS(app)
 prolog = Prolog()
 prolog.consult("vocacional_api.pl")
 
+#Rota inicial, carrega o html
 @app.route('/')
 def home():
     return render_template('index.html')
 
+#Pega as questoes das macro-areas disponibilizadas pela API em PROLOG e retorna com um JSON
 @app.route('/api/questions1', methods=['GET'])
 def get_questions1():
     try:
@@ -38,6 +43,7 @@ def get_questions1():
         print(f"Erro no Prolog: {e}")
         return jsonify({"error": str(e)}), 500
 
+# Envia as Respostas dessas perguntas para a API
 @app.route('/api/submit1', methods=['POST'])
 def submit1():
     data = request.json
@@ -55,6 +61,7 @@ def submit1():
         
     return jsonify({"top_areas": top_areas})
 
+# Recebe as perguntas das micro-areas, baseadas nas respostas anteriores
 @app.route('/api/questions2', methods=['POST'])
 def get_questions2():
     data = request.json
@@ -83,6 +90,7 @@ def get_questions2():
             
     return jsonify(questions)
 
+# Envia as respostas das micro-areas e recebe o ranking final, enviado pela API
 @app.route('/api/submit_final', methods=['POST'])
 def submit_final():
     data = request.json
