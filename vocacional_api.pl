@@ -389,18 +389,18 @@ somar_perguntas_areas([Area|Resto], Total) :-
     somar_perguntas_areas(Resto, SubTotal),
     Total is Qtd + SubTotal.
 
-% Calcula a média individual de um curso
+% Calcula a media individual de um curso
 calcular_media_curso(CursoReal, ScoreTotal, Media) :-
-    % 1. Descobre quais áreas alimentam este curso (Ex: Psicologia -> [saude, humanas])
+    % Descobre quais áreas alimentam este curso
     findall(Area, 
             (curso(Area, RawName), resolver_nome_curso(RawName, CursoReal)), 
             Areas),
     sort(Areas, UniqueAreas), % Remove duplicatas se houver
     
-    % 2. Soma o total de perguntas possíveis nessas áreas
+    % Soma o total de perguntas possíveis nessas áreas
     somar_perguntas_areas(UniqueAreas, Denominador),
     
-    % 3. Faz a divisão (evitando divisão por zero)
+    % Faz a divisão 
     (Denominador > 0 -> 
         MediaRaw is ScoreTotal / Denominador,
         % Multiplica por 10 para ficar uma nota tipo "7.5" em vez de "0.75"
